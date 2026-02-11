@@ -1,0 +1,135 @@
+import pytest
+import torch
+from torch.distributions import Distribution
+from exp.models.components.qlstm import QLSTM
+from exp.models.policy import StackedHiddenPiV
+from exp.models.utils import ObsInfo
+class TestStackedHiddenPiV:
+    BATCH_SIZE = 2
+    SEQ_LEN = 3
+    DEPTH = 2
+    DIM = 8
+    OBS_DIM = 16
+    OBS_DIM_HIDDEN = 12
+    OBS_NUM_TOKENS = 4
+    ACTION_CHOICES = [2, 3, 4]
+    DIM_FF_HIDDEN = 16
+    @pytest.fixture
+    def obs_info(self):
+        return ObsInfo(
+            dim=self.OBS_DIM,
+            dim_hidden=self.OBS_DIM_HIDDEN,
+            num_tokens=self.OBS_NUM_TOKENS,
+        )
+    @pytest.fixture
+    def core_model(self):
+        return QLSTM(
+            depth=self.DEPTH,
+            dim=self.DIM,
+            dim_ff_hidden=self.DIM_FF_HIDDEN,
+            dropout=0.0,
+        )
+    @pytest.fixture
+    def policy_value_model(self, obs_info, core_model):
+        return StackedHiddenPiV(
+            obs_info=obs_info,
+            action_choices=self.ACTION_CHOICES,
+            dim=self.DIM,
+            core_model=core_model,
+        )
+    @pytest.fixture
+    def observation(self):
+        return torch.randn(
+            self.BATCH_SIZE, self.SEQ_LEN, self.OBS_NUM_TOKENS, self.OBS_DIM
+        )
+    @pytest.fixture
+    def hidden(self):
+        return torch.randn(self.BATCH_SIZE, self.DEPTH, self.DIM)
+    def test_forward(self, policy_value_model, observation, hidden):
+        """Test forward pass of StackedHiddenPiV model."""
+        policy_dist, value, next_hidden = policy_value_model(observation, hidden)
+        assert isinstance(policy_dist, Distribution)
+        assert isinstance(value, torch.Tensor)
+        assert isinstance(next_hidden, torch.Tensor)
+        sample_action = policy_dist.sample()
+        assert sample_action.shape == (
+            self.BATCH_SIZE,
+            self.SEQ_LEN,
+            len(self.ACTION_CHOICES),
+        )
+        assert value.shape == (self.BATCH_SIZE, self.SEQ_LEN)
+        assert next_hidden.shape == (
+            self.BATCH_SIZE,
+            self.DEPTH,
+            self.SEQ_LEN,
+            self.DIM,
+        )
+        log_prob = policy_dist.log_prob(sample_action)
+        assert log_prob.shape == (
+            self.BATCH_SIZE,
+            self.SEQ_LEN,
+        )
+        entropy = policy_dist.entropy()
+        assert entropy.shape == (
+            self.BATCH_SIZE,
+            self.SEQ_LEN,
+        )
+    def test_single_batch(self, policy_value_model, observation, hidden):
+        """Test with single batch size."""
+        single_obs = observation[:1]
+        single_hidden = hidden[:1]
+        policy_dist, value, next_hidden = policy_value_model(single_obs, single_hidden)
+        sample_action = policy_dist.sample()
+        assert sample_action.shape == (1, self.SEQ_LEN, len(self.ACTION_CHOICES))
+        assert value.shape == (1, self.SEQ_LEN)
+        assert next_hidden.shape == (1, self.DEPTH, self.SEQ_LEN, self.DIM)
+    def test_forward_with_no_len(self, policy_value_model, hidden):
+        """Test forward_with_no_len for inference without sequence
+        dimension."""
+        obs_no_len = torch.randn(self.BATCH_SIZE, self.OBS_NUM_TOKENS, self.OBS_DIM)
+        policy_dist, value, next_hidden = policy_value_model.forward_with_no_len(
+            obs_no_len, hidden
+        )
+        sample_action = policy_dist.sample()
+        assert sample_action.shape == (self.BATCH_SIZE, len(self.ACTION_CHOICES))
+        assert value.shape == (self.BATCH_SIZE,)
+        assert next_hidden.shape == (
+            self.BATCH_SIZE,
+            self.DEPTH,
+            self.DIM,
+        )
+        log_prob = policy_dist.log_prob(sample_action)
+        assert log_prob.shape == (self.BATCH_SIZE,)
+    def test_forward_no_hidden(self, policy_value_model, observation):
+        """Test forward pass without providing hidden state."""
+        policy_dist, value, next_hidden = policy_value_model(observation)
+        assert isinstance(policy_dist, Distribution)
+        assert isinstance(value, torch.Tensor)
+        assert isinstance(next_hidden, torch.Tensor)
+        sample_action = policy_dist.sample()
+        assert sample_action.shape == (
+            self.BATCH_SIZE,
+            self.SEQ_LEN,
+            len(self.ACTION_CHOICES),
+        )
+        assert value.shape == (self.BATCH_SIZE, self.SEQ_LEN)
+        assert next_hidden.shape == (
+            self.BATCH_SIZE,
+            self.DEPTH,
+            self.SEQ_LEN,
+            self.DIM,
+        )
+    def test_forward_with_no_len_no_hidden(self, policy_value_model):
+        """Test forward_with_no_len without providing hidden state."""
+        obs_no_len = torch.randn(self.BATCH_SIZE, self.OBS_NUM_TOKENS, self.OBS_DIM)
+        policy_dist, value, next_hidden = policy_value_model.forward_with_no_len(
+            obs_no_len
+        )
+        sample_action = policy_dist.sample()
+        assert sample_action.shape == (self.BATCH_SIZE, len(self.ACTION_CHOICES))
+        assert value.shape == (self.BATCH_SIZE,)
+        assert next_hidden.shape == (
+            self.BATCH_SIZE,
+            self.DEPTH,
+            self.DIM,
+        )

@@ -1,0 +1,4 @@
+[submodule "poker-agent/external/TexasSolver"]
+	path = poker-agent/external/TexasSolver
+	url = https://github.com/bupticybee/TexasSolver.git
+	branch = master

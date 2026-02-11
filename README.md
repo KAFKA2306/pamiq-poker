@@ -62,10 +62,10 @@ VRChat環境における好奇心駆動型強化学習の実験リポジトリ
 
 ```bash
 # 実験を開始（experimentには実験設定ファイル名を指定）
-python src/train.py experiment=<実験設定名>
+uv run python src/train.py experiment=<実験設定名>
 
 # タブ補完で利用可能な実験設定を確認できる
-python src/train.py experiment=[TAB]
+uv run python src/train.py experiment=[TAB]
 ```
 
 ### 実験パラメータの調整
@@ -74,7 +74,7 @@ Hydraを使用しているため、コマンドラインから簡単にパラメ
 
 ```bash
 # 学習率を変更して実行
-python src/train.py experiment=<実験設定名> trainers.policy.partial_optimizer.lr=3e-4
+uv run python src/train.py experiment=<実験設定名> trainers.policy.partial_optimizer.lr=3e-4
 ```
 
 ### 長時間実験のための設定
@@ -86,7 +86,7 @@ python src/train.py experiment=<実験設定名> trainers.policy.partial_optimiz
 tmux new -s my_experiment
 
 # 実験を開始
-python src/train.py experiment=<実験設定名>
+uv run python src/train.py experiment=<実験設定名>
 
 # Ctrl+B → D でセッションから離脱（実験は継続）
 
@@ -113,7 +113,7 @@ make aim
 
 ### 開発時の注意点
 
-- Python 3.12以降の機能を使用（match文など）
+- uv run python 3.12以降の機能を使用（match文など）
 - 型アノテーションは必須（`list[str]`の形式で記述）
 - Docstringは英語でGoogle Styleで記述
 
@@ -199,4 +199,3 @@ make venv
 - 実験ログは指定した`LOG_DIR`に保存される
 - チェックポイントは定期的に保存され、実験の再開が可能
 - `extensions.json`に記載のVSCode拡張機能をインストールすると開発が便利になる
-# pamiq-poker

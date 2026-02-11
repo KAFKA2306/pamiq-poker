@@ -1,0 +1,4 @@
+# @package interaction.agent.curiosity
+
+_target_: poker_agent.agent.TexasSolverAgent
+solver_path: ${paths.root_dir}/poker_agent/external/TexasSolver/TexasSolver
