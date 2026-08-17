@@ -1,5 +1,8 @@
 # PAMIQ Curiosity Experiments
 
+[![Test](https://github.com/KAFKA2306/pamiq-poker/actions/workflows/test.yml/badge.svg)](https://github.com/KAFKA2306/pamiq-poker/actions/workflows/test.yml)
+[![Type Check](https://github.com/KAFKA2306/pamiq-poker/actions/workflows/type-check.yaml/badge.svg)](https://github.com/KAFKA2306/pamiq-poker/actions/workflows/type-check.yaml)
+
 VRChat環境における好奇心駆動型強化学習の実験リポジトリ
 
 ## 概要
